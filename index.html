@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>index</title>
+        <title>А.А.Щуров Б8403А (распознавание образов)</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="js/jquery-3.2.1.min.js"></script>
@@ -13,8 +13,69 @@
             }
             
         </style>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+        </script>
+        <script type="text/javascript"
+            src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        </script>
     </head>
     <body>
-       hello
+        Лабораторная работа  № 2<br>
+        Тема: Случайные величины: законы распределения, числовые характеристики. Моделирование случайных величин с заданными законами распределения. Оценивание числовых характеристик и законов распределения по выборочным данным<br>
+        Выполнил студент группы Б8403А Щуров Алексей<br><br>
+        Дискретная задача (вар. 3)
+        <br>
+        Случайная величина  X  может иметь любое целое положительное значение $n$ с вероятностью, пропорциональной $\left(\frac{2}{3}\right)^n$
+        <br><br>
+        Т.к. $\sum\limits_{k=1}^{\infty}\left(\frac{2}{3}\right)^k=2$, число $n$ выпадает с вероятностью $\frac{1}{2}\left(\frac{2}{3}\right)^n$
+        <br>
+        <div id="chartContainerDSPolygon" style="height: 300px; width: 100%;"></div><br> 
+        Вероятность попасть в диапазон [<input type="number" value="2" id="A" style="width:40px;">,<input type="number" value="7" id="B" style="width:40px;">] = <span id="d_pos">0.608139</span>
+        <div id="chartContainerF" style="height: 300px; width: 100%;"></div><br>
+        <div> 
+            <br><br><br>
+            Объем выборки <input type="number" value="1000" id="N" style="width:70px;">
+            <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+            <div id="results"> </div>
+        </div>
+        <br>
+        <div id="chartContainerStF" style="height: 300px; width: 100%;"></div><br>
+        <br><br><br>
+        Непрерывная задача (вар. 1)
+        <br>
+        Случайная величина эксцентриситета детали характеризуется функцией распределения Рэлея $$F(x)=1-e^{-\frac{x^2}{2\sigma^2}}$$
+        <br>
+        Плотность распределения $$f(x)=F'(x)=\frac{x}{\sigma^2}e^{-\frac{x^2}{2\sigma^2}}$$
+        <br>
+        Мода $-$ максимум на плотности 
+        $$f'(x_m)=\frac{1}{\sigma^2}e^{-\frac{x^2}{2\sigma^2}}\left(1-\frac{x^2}{\sigma^2}\right)=0 \Rightarrow x_m = |\sigma|$$
+        $$f(x_m)=\frac{1}{\sigma\sqrt{e}}$$
+        <br>
+        Медиана $$F(x)=1-e^{-\frac{x^2}{2\sigma^2}}=\frac{1}{2} \Rightarrow e^{-\frac{x^2}{2\sigma^2}} = \frac{1}{2} \Rightarrow x_{med}=2\sigma^2\ln{2}$$
+        <br>
+        <br>
+        Среднее $$M(X)=\int\limits_0^{\infty}x f(x) dx=-xe^{-\frac{x^2}{2\sigma^2}}\Big|_0^{\infty}+\int\limits_0^{\infty}e^{-\frac{x^2}{2\sigma^2}}dx=\sigma\sqrt{\frac{\pi}{2}}$$
+        <br>
+        <!-- Дисперсия $D(X)=M(X^2)-M(X)^2$ -->
+        <!-- $$M(X^2)=$$ -->
+
+        $\sigma=$<input type="number" value="2.00" id="sigma" step="0.0001" style="width:60px;">, 
+        $P($<input type="number" value="1.00" step="0.0001" id="cA" style="width:60px;">$\leq X \leq $<input type="number" value="2.00" step="0.0001" id="cB" style="width:60px;">$)=$<span id="cont_pos"></span><br>
+        Аналитические:<br>
+        $x_{mode}=$<span id="contMode"></span><br>
+        $x_{med}=$<span id="contMedian"></span><br>
+        $x_{mean}=$<span id="contMean"></span><br>
+        <div id="chartContainerContP" style="height: 300px; width: 50%;"></div>
+        <div id="chartContainerContF" style="height: 300px; width: 50%;"></div>
+        <div> 
+            <br><br><br>
+            Объем выборки <input type="number" value="1000" id="contN" style="width:70px;"><br>
+            Количество интервалов <input type="number" value="15" id="contNBin" style="width:70px;">
+            <div id="chartContainerContSample" style="height: 300px; width: 50%;"></div>
+            <div id="contResults"> </div>
+            <div id="chartContainerContStF" style="height: 300px; width: 50%;"></div><br>
+        </div>
+
     </body>
 </html>
