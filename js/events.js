@@ -96,19 +96,22 @@ $(document).ready(function() {
 		}
 		variance /= data.length;
 
-		let m2 = 0, m3 = 0;
+		let m2 = 0, m3 = 0, m4 = 0;
 		for (let i = 0; i < data.length; i++) {
-			m2 += (data[i].x - mean)*(data[i].x - mean);
-			m3 += (data[i].x - mean)*(data[i].x - mean)*(data[i].x - mean);
+			m2 += Math.pow(data[i].x - mean, 2);
+			m3 += Math.pow(data[i].x - mean, 3);
+			m4 += Math.pow(data[i].x - mean, 4);
 		}
 		m2 = m2/(N - 1);
 		m3 = m3/(N - 1)*N/(N - 2);
 		let asym = m3/Math.pow(Math.sqrt(m3), 3);
+		let kurtosis = N*(N+1)/(N-1)/(N-2)*m4/(N-3)/Math.pow(variance, 2) - 3*(N-1)*(N-1)/(N-2)/(N-3);
 
 		return {
 			mean: mean,
 			variance: variance,
-			asym: asym
+			asym: asym,
+			kurtosis: kurtosis
 		};
 	}
 
@@ -144,8 +147,8 @@ $(document).ready(function() {
 			'Среднее: ' + st.mean.toFixed(precision) + 
 			'<br>Дисперсия ' + st.variance.toFixed(precision) +
 			'<br>Срквадр ' + Math.sqrt(st.variance).toFixed(precision) + 
-			'<br>Коэф. асимметрии ' + st.asym.toFixed(precision));
-			 // + '<br>Коэф. эксцесса '+'<br>');
+			'<br>Коэф. асимметрии ' + st.asym.toFixed(precision) + 
+			'<br>Коэф. эксцесса ' + st.kurtosis.toFixed(precision) +'<br>');
 
 		let stF = [{x:0, y:0}];
 		for (let i = 1; i < sample.length; i++) {
@@ -378,7 +381,8 @@ $(document).ready(function() {
 			'Среднее: ' + st.mean.toFixed(precision) + 
 			'<br>Дисперсия ' + st.variance.toFixed(precision) +
 			'<br>Срквадр ' + Math.sqrt(st.variance).toFixed(precision) + 
-			'<br>Коэф. асимметрии ' + st.asym.toFixed(precision));
+			'<br>Коэф. асимметрии ' + st.asym.toFixed(precision) +
+			'<br>Коэф. эксцесса ' + st.kurtosis.toFixed(precision) +'<br>');
 
 		let stF = [{x:0, y:0}];
 		for (let i = 1; i < sample.length; i++) {
