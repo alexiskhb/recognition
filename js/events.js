@@ -92,7 +92,7 @@ $(document).ready(function() {
 		
 		let variance = 0;
 		for (let i = 0; i < data.length; i++) {
-			variance += (data[i].x - mean)*(data[i].x - mean);
+			variance += Math.pow(data[i].x - mean, 2);
 		}
 		variance /= data.length;
 
@@ -143,10 +143,15 @@ $(document).ready(function() {
 		});
 		chart.render();
 		let st = getStats(sample, N);
+		let variance = 6;
+		let mean = 3;
+		$('#resultsTbl').empty();
+		$('#resultsTbl').
+			append($('<tr>').append($('<td>').html('.')).append($('<td>').html('Вычисл.')).append($('<td>').html('Аналит.')).append($('<td>').html('Ошибка'))).
+			append($('<tr>').append($('<td>').html('Среднее')).append($('<td>').html(st.mean.toFixed(precision))).append($('<td>').html(mean.toFixed(precision))).append($('<td>').html((st.mean-mean).toFixed(precision)))).
+			append($('<tr>').append($('<td>').html('Дисперсия')).append($('<td>').html(Math.sqrt(st.variance).toFixed(precision))).append($('<td>').html(variance.toFixed(precision))).append($('<td>').html((Math.sqrt(st.variance)-variance).toFixed(precision))));
+
 		$('#results').html(
-			'Среднее: ' + st.mean.toFixed(precision) + 
-			'<br>Дисперсия ' + st.variance.toFixed(precision) +
-			'<br>Срквадр ' + Math.sqrt(st.variance).toFixed(precision) + 
 			'<br>Коэф. асимметрии ' + st.asym.toFixed(precision) + 
 			'<br>Коэф. эксцесса ' + st.kurtosis.toFixed(precision) +'<br>');
 
@@ -178,6 +183,10 @@ $(document).ready(function() {
 	}
 
 	$('#N').on('change', function(event) {
+		updateSample();
+	});
+
+	$('#refresh').on('click', function(event) {
 		updateSample();
 	});
 
@@ -242,23 +251,7 @@ $(document).ready(function() {
 				maximum: 1.1
 			},
 			axisX:{
-				minimum: 0,
-				stripLines:[
-				{
-					value: contMedian,
-					color:"blue",
-					label : "d",
-					labelFontColor: "blue",
-					labelPlacement: "outside"
-				},
-				{
-					value: contMean,
-					color:"blue",
-					label : "n",
-					labelFontColor: "blue",
-					labelPlacement: "outside"
-				}
-				]
+				minimum: 0
 			}
 		});
 		chartF.render();
@@ -295,7 +288,21 @@ $(document).ready(function() {
 				{
 					value: contMode,
 					color:"blue",
-					label : "mode",
+					label : "m",
+					labelFontColor: "blue",
+					labelPlacement: "outside"
+				},
+				{
+					value: contMedian,
+					color:"blue",
+					label : "d",
+					labelFontColor: "blue",
+					labelPlacement: "outside"
+				},
+				{
+					value: contMean,
+					color:"blue",
+					label : "n",
 					labelFontColor: "blue",
 					labelPlacement: "outside"
 				}
@@ -350,6 +357,7 @@ $(document).ready(function() {
 
 	function updateContSample() {
 		let N = $('#contN').val();
+		let sigma = Number($('#sigma').val());
 		let sample = getContSampleDataPoints(N);
 		for (let i = 0 ; i < sample.length; i++) {
 			sample[i].y /= N;
@@ -377,10 +385,15 @@ $(document).ready(function() {
 			}
 		});
 		chart.render();
+		let contMean = sigma*Math.sqrt(Math.PI/2);
+		let contVar = sigma*sigma*(2-Math.PI/2);
+		$('#contResultsTbl').empty();
+		$('#contResultsTbl').
+			append($('<tr>').append($('<td>').html('.')).append($('<td>').html('Вычисл.')).append($('<td>').html('Аналит.')).append($('<td>').html('Ошибка'))).
+			append($('<tr>').append($('<td>').html('Среднее')).append($('<td>').html(st.mean.toFixed(precision))).append($('<td>').html(contMean.toFixed(precision))).append($('<td>').html((st.mean-contMean).toFixed(precision)))).
+			append($('<tr>').append($('<td>').html('Дисперсия')).append($('<td>').html(Math.sqrt(st.variance).toFixed(precision))).append($('<td>').html(contVar.toFixed(precision))).append($('<td>').html((Math.sqrt(st.variance)-contVar).toFixed(precision))));
+
 		$('#contResults').html(
-			'Среднее: ' + st.mean.toFixed(precision) + 
-			'<br>Дисперсия ' + st.variance.toFixed(precision) +
-			'<br>Срквадр ' + Math.sqrt(st.variance).toFixed(precision) + 
 			'<br>Коэф. асимметрии ' + st.asym.toFixed(precision) +
 			'<br>Коэф. эксцесса ' + st.kurtosis.toFixed(precision) +'<br>');
 
@@ -412,6 +425,9 @@ $(document).ready(function() {
 		chartStF.render();
 	}
 
+	$('#contRefresh').on('click', function(event) {
+		updateContSample();
+	});
 	$('#contN').on('change', function(event) {
 		updateContSample();
 	});
