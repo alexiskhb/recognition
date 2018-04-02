@@ -1,4 +1,6 @@
 $(document).ready(function() {
+	var precision = 4;
+
 	function splitNumsByWhitespace(s) {
 		return s.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
 	}
@@ -163,21 +165,23 @@ $(document).ready(function() {
 		if (!corr) {
 			return null;
 		}
+		let radioX = Number($('input[name=radioX]:checked').val());
+		let radioY = Number($('input[name=radioY]:checked').val());
 		let B = cholesky(corr);
 		let B2 = jStat.cholesky(corr); 
 		let samples = getSamples(Number($('#nOfVectors').val()), means.length, means, B2);
 		let samplesTr = jStat.transpose(samples);
-		let sampleMeans = samplesTr.map(jStat.mean).map(function(k){return Number(k.toFixed(4))});
-		let sampleVars = samplesTr.map(jStat.variance).map(function(k){return Number(k.toFixed(4))});
-		let sampleMeansDelta = jStat.subtract(means, sampleMeans).map(function(k){return Number(k.toFixed(4))});
-		let sampleVarsDelta = jStat.subtract(vars, sampleVars).map(function(k){return Number(k.toFixed(4))});
-		/*.replace(/,/g, " ")*/
+		let sampleMeans = samplesTr.map(jStat.mean).map(function(k){return Number(k.toFixed(precision))});
+		let sampleVars = samplesTr.map(jStat.variance).map(function(k){return Number(k.toFixed(precision))});
+		let sampleMeansDelta = jStat.subtract(means, sampleMeans).map(function(k){return Number(k.toFixed(precision))});
+		let sampleVarsDelta = jStat.subtract(vars, sampleVars).map(function(k){return Number(k.toFixed(precision))});
+		let sampleCorrcoeff = jStat.corrcoeff(samplesTr[radioX], samplesTr[radioY]);
 		$('#sampleMean').html(JSON.stringify(sampleMeans));
 		$('#sampleVar').html(JSON.stringify(sampleVars));
 		$('#sampleMeanDelta').html(JSON.stringify(sampleVarsDelta));
 		$('#sampleVarDelta').html(JSON.stringify(sampleMeansDelta));
-		let radioX = Number($('input[name=radioX]:checked').val());
-		let radioY = Number($('input[name=radioY]:checked').val());
+		$('#sampleCorrcoeff').html(sampleCorrcoeff.toFixed(precision));
+		$('#sampleCorrcoeffDelta').html((corr[radioX][radioY]/Math.sqrt(vars[radioX]*vars[radioY]) - sampleCorrcoeff).toFixed(precision));
 		let minX = jStat.min(samplesTr[radioX]);
 		let maxX = jStat.max(samplesTr[radioX]);
 		let minY = jStat.min(samplesTr[radioY]);
@@ -187,6 +191,11 @@ $(document).ready(function() {
 		                                 Math.sqrt(vars[radioX]), Math.sqrt(vars[radioY]), 
 		                                 means[radioX], means[radioY], 
 		                                 corr[radioX][radioY]/Math.sqrt(vars[radioX])/Math.sqrt(vars[radioY]));
+
+		let estimatedHeatmap = getNormal2DHeatmap(means[radioX] - vars[radioX], means[radioY] - vars[radioY], 2*Math.max(vars[radioX], vars[radioY]), 
+		                                 Math.sqrt(sampleVars[radioX]), Math.sqrt(sampleVars[radioY]), 
+		                                 sampleMeans[radioX], sampleMeans[radioY], 
+		                                 sampleCorrcoeff);
 		let data = [heatmap, {
 			x: samplesTr[radioX],
 			y: samplesTr[radioY],
@@ -199,10 +208,11 @@ $(document).ready(function() {
 			yaxis: {range: [means[radioY] - vars[radioY], means[radioY] - vars[radioY] + 2*Math.max(vars[radioX], vars[radioY])]}
 		};
 		Plotly.newPlot('normalPlotContainer', data, layout);
+		data[0] = estimatedHeatmap;
+		Plotly.newPlot('estimatedNormalPlotContainer', data, layout);
 	});
 
 	var seriesN = 50;
-	var precision = 5;
 
 	function distrSeries() {
 		let dataPoints = [];
@@ -438,7 +448,7 @@ $(document).ready(function() {
 		let B = Number($('#cB').val());
 		let sigma = Number($('#sigma').val());
 		let result = F(B, sigma) - F(A, sigma);
-		$('#cont_pos').html(result.toFixed(4));
+		$('#cont_pos').html(result.toFixed(precision));
 	}
 
 	function redrawCont() {
