@@ -195,8 +195,8 @@ $(document).ready(function() {
 			marker: {size:5, color: 'orange'}
 		}];
 		let layout = {
-			xaxis: {range: [means[radioX] - vars[radioX], means[radioX] + Math.max(vars[radioX], vars[radioY])]},
-			yaxis: {range: [means[radioY] - vars[radioY], means[radioY] + Math.max(vars[radioX], vars[radioY])]}
+			xaxis: {range: [means[radioX] - vars[radioX], means[radioX] - vars[radioX] + 2*Math.max(vars[radioX], vars[radioY])]},
+			yaxis: {range: [means[radioY] - vars[radioY], means[radioY] - vars[radioY] + 2*Math.max(vars[radioX], vars[radioY])]}
 		};
 		Plotly.newPlot('normalPlotContainer', data, layout);
 	});
