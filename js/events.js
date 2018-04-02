@@ -1,9 +1,160 @@
 $(document).ready(function() {
 	var precision = 4;
+	var pfc = 96/2.54; // approx pixels for centimiter
 
 	function splitNumsByWhitespace(s) {
 		return s.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
 	}
+
+	$('#drawSignal').on('click', function(event) {
+		function screenLinspace(width) {
+			let delta = 1/pfc;
+			let r = [];
+			for (let x = 0; x < width/pfc; x += delta) {
+				r.push(x);
+			}
+			return r;
+		} 
+
+		let signals = [
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //1
+				let x = screenLinspace(n);
+				let y = x.map(function(t){return {x:t, y:0};});
+				for (let i = 0; i < y.length; i++) {
+					if (x[i] >= n0) {
+						y[i].y = 1;
+						break;
+					}
+				}
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //2
+				let x = screenLinspace(n);
+				let y = x.map(function(t){return {x:t, y:0};});
+				for (let i = 0; i < y.length; i++) {
+					if (x[i] >= n0) {
+						y[i].y = 1;
+					}
+				}
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //3
+				let x = screenLinspace(n);
+				let y = x.map(function(t){return {x:t, y:Math.pow(a, t)};});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //4
+				let x = screenLinspace(n);
+				let y = x.map(function(t){return {x:t, y:a*Math.sin(2*Math.PI*omega*t + phi)};});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //5
+				L = Math.trunc(L);
+				let x = screenLinspace(n);
+				let y = x.map(function(t) {
+					let tr = Math.trunc(t);
+					return {x:t, y:tr%L < L/2 ? 1 : -1};
+				});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //6 
+				L = Math.trunc(L);
+				let x = screenLinspace(n);
+				let y = x.map(function(t) {
+					let tr = Math.trunc(t);
+					return {x:t, y:(tr%L)/L};
+				});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //7 
+				let x = screenLinspace(n);
+				let y = x.map(function(t) {
+					return {x:t, y:a*Math.pow(Math.E, -t/tau)*Math.cos(2*Math.PI*omega*t + phi)};
+				});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //8
+				let x = screenLinspace(n);
+				let y = x.map(function(t) {
+					return {x:t, y:a*Math.cos(u*t)*Math.cos(2*Math.PI*omega*t + phi)};
+				});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //9
+				let x = screenLinspace(n);
+				let y = x.map(function(t) {
+					return {x:t, y:a*(1 + m*Math.cos(u*t))*Math.cos(2*Math.PI*omega*t + phi)};
+				});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //10
+				let x = screenLinspace(n);
+				let y = x.map(function(t) {
+					return {x:t, y: A + (B - A)*Math.random()};
+				});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //11
+				let x = screenLinspace(n);
+				let y = x.map(function(t) {
+					return {x:t, y: jStat.normal.sample(a, sigma)};
+				});
+				return y;
+			},
+			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //12
+				let x = screenLinspace(n);
+				let rs = [];
+				let y = [];
+				for (let i = 0; i < x.length; i++) {
+					let t = x[i];
+					let r = jStat.normal.sample(0, 1);
+					rs.push(r);
+					for (let j = 1; j <= q.length && i - j >= 0; j++) {
+						r += q[j - 1]*rs[i - j];
+					}
+					for (let j = 1; j <= p.length && i - j >= 0; j++) {
+						r -= p[j - 1]*y[i - j].y;
+					}
+					y.push({x:t, y: r});
+				};
+				return y;
+			}
+		];
+
+		let n = Number($('#signalParam_N').val());
+		let n0 = Number($('#signalParam_n0').val());
+		let a = Number($('#signalParam_a').val());
+		let omega = Number($('#signalParam_omega').val());
+		let phi = Number($('#signalParam_phi').val());
+		let L = Number($('#signalParam_L').val());
+		let tau = Number($('#signalParam_tau').val());
+		let u = Number($('#signalParam_u').val());
+		let m = Number($('#signalParam_m').val());
+		let A = Number($('#signalParam_A').val());
+		let B = Number($('#signalParam_B').val());
+		let sigma = Number($('#signalParam_sigma').val());
+		let showLine = $('#showLine').is(":checked");
+		let p = splitNumsByWhitespace($('#signalParam_p').val());
+		let q = splitNumsByWhitespace($('#signalParam_q').val());
+
+		let selectId = Number($("select#signal").val());
+		let selectText = $('#signal>option:selected').text();
+		let points = signals[selectId](n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma);
+		(new CanvasJS.Chart("signalPlotContainer", {
+			zoomEnabled: true,
+			zoomType: "x",
+			title: {text: selectText},
+			data: [{
+				color: "blue",
+				type: showLine ? "line" : "column",
+				dataPoints: points
+			}],
+			axisX:{minimum: 0}
+		})).render();
+	});
+
+
+
 
 	$('#generateNthNormal').on('click', function(event) {
 		function getCovariationMatrix(vars) {
@@ -211,6 +362,9 @@ $(document).ready(function() {
 		data[0] = estimatedHeatmap;
 		Plotly.newPlot('estimatedNormalPlotContainer', data, layout);
 	});
+
+
+
 
 	var seriesN = 50;
 

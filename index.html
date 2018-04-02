@@ -13,7 +13,6 @@
             .canvasjs-chart-credit {
                 display: none;
             }
-            
         </style>
         <script type="text/x-mathjax-config">
             MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
@@ -22,8 +21,70 @@
             src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
         </script>
     </head>
+
     <body>
         Выполнил студент группы Б8403А Щуров Алексей<br><br>
+        Лабораторная работа  № 4<br>
+        I. Моделирование и графическое отображение типовых цифровых сигналов<br>
+        $N$ <input type="number" step="0.0001" value="1000" id="signalParam_N" style="width:60px;"><br>
+        <table>
+            <tr>
+                <td>$n_0$   <input type="number" step="0.0001" value="5" id="signalParam_n0" style="width:60px;"></td>
+                <td>$a$     <input type="number" step="0.0001" value="0.7" id="signalParam_a" style="width:60px;"></td>
+                <td>$\omega$<input type="number" step="0.0001" value="5" id="signalParam_omega" style="width:60px;"></td>
+                <td>$\phi$  <input type="number" step="0.0001" value="3.14" id="signalParam_phi" style="width:60px;"></td>
+                <td>$L$     <input type="number" step="0.0001" value="6" id="signalParam_L" style="width:60px;"></td>
+                <td>$\sigma$<input type="number" step="0.0001" value="0.3" id="signalParam_sigma" style="width:60px;"></td>
+                <td>$p$     <input type="text" step="0.0001" value="2.34 -2.733 2.148 -0.863" id="signalParam_p" style="width:200px;"></td>
+            </tr>
+            <tr>
+                <td>$\tau$  <input type="number" step="0.0001" value="8" id="signalParam_tau" style="width:60px;"></td>
+                <td>$u$     <input type="number" step="0.0001" value="2" id="signalParam_u" style="width:60px;"></td>
+                <td>$m$     <input type="number" step="0.0001" value="0.5" id="signalParam_m" style="width:60px;"></td>
+                <td>$A$     <input type="number" step="0.0001" value="5" id="signalParam_A" style="width:60px;"></td>
+                <td>$B$     <input type="number" step="0.0001" value="7" id="signalParam_B" style="width:60px;"></td>
+                <td>Линия <input type="checkbox" id="showLine"></td>
+                <td>$q$     <input type="text" step="0.0001" value="-1.12 0.592" id="signalParam_q" style="width:200px;"></td>
+            </tr>
+        </table>
+        <button id="drawSignal">Отобразить</button>
+        <select id="signal">
+            <option value="0">Задержанный единичный импульс с задержкой n0</option>
+            <option value="1">Задержанный единичный скачок с задержкой n0</option>
+            <option value="2">Дискретизированная убывающая экспонента a^n</option>
+            <option value="3">Дискретизированная синусоида с заданными амплитудой a, частотой omega и начальной фазой phi</option>
+            <option value="4">«меандр» (прямоугольная решетка) с периодом L</option>
+            <option value="5">“пила” с периодом L</option>
+            <option value="6">Сигнал с экспоненциальной огибающей - амплитудная модуляция a exp(-t/tau) cos(omega t + phi)</option>
+            <option value="7">Сигнал с балансной огибающей - амплитудная модуляция a cos(u t) cos(omega t + phi)</option>
+            <option value="8">Сигнал с тональной огибающей - амплитудная модуляция a (1 + m cos(u t)) cos(omega t + phi)</option>
+            <option value="9">Сигнал белого шума, равномерно распределенного в интервале [A,B]</option>
+            <option value="10">Сигнал белого шума, распределенного по нормальному закону с заданными средним a и дисперсией sigma^2</option>
+            <option value="11">Случайный сигнал авторегрессии-скользящего среднего порядка (p,q)</option>
+        </select><br>
+        <div id="signalPlotContainer" style="height: 350px; width: 100%;"></div><br>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <br><br>
         Лабораторная работа  № 3<br>
         Тема: Системы случайные величин (случайные векторы) с нормальным законом распределения  :  отображение двумерных проекций плотности распределения в изолиниях, моделирование случайных выборок с заданными параметрами распределения, оценивание параметров закона распределения по выборочным данным<br>
         <br>
@@ -41,12 +102,6 @@
 -0.4227   0.8118    1   
         </textarea>
         Корелляционная матрица<br>
-<!-- 706.0404   27.7879   41.0202
-27.7879   45.0622   23.8194
-41.0202   23.8194   48.0590 -->
-<!-- 0.025   0.0075  0.00175
-0.0075  0.0070  0.00135
-0.00175 0.00135 0.00043 -->
         <table>
             <tr><td>...</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td></tr>
             <tr>
@@ -108,6 +163,19 @@
                 </td>
             </tr>
         </table>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         <br>
         Лабораторная работа  № 2<br>
