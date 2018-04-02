@@ -6,6 +6,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="js/jquery-3.2.1.min.js"></script>
         <script src="js/canvasjs-commercial/jquery.canvasjs.min.js"></script>
+        <script src="js/plotly-latest.min.js"></script>
+        <script src="js/jstat.js"></script>
         <script src="js/events.js"></script>
         <style>
             .canvasjs-chart-credit {
@@ -21,9 +23,80 @@
         </script>
     </head>
     <body>
+        Выполнил студент группы Б8403А Щуров Алексей<br><br>
+        Лабораторная работа  № 3<br>
+        Тема: Системы случайные величин (случайные векторы) с нормальным законом распределения  :  отображение двумерных проекций плотности распределения в изолиниях, моделирование случайных выборок с заданными параметрами распределения, оценивание параметров закона распределения по выборочным данным<br>
+        <br>
+        <textarea id="meanVector" style="height: 20px; width: 250px;">
+-10 10 0
+        </textarea>
+        Вектор средних<br>
+        <textarea id="varVector" style="height: 20px; width: 250px;">
+20 10 5
+        </textarea>
+        Вектор дисперсий<br>
+        <textarea id="covariationMatrix" style="height: 100px; width: 250px;">
+1
+0.1558    1
+-0.4227   0.8118    1   
+        </textarea>
+        Корелляционная матрица<br>
+<!-- 706.0404   27.7879   41.0202
+27.7879   45.0622   23.8194
+41.0202   23.8194   48.0590 -->
+<!-- 0.025   0.0075  0.00175
+0.0075  0.0070  0.00135
+0.00175 0.00135 0.00043 -->
+        <table>
+            <tr><td>...</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td></tr>
+            <tr>
+                <td>X</td>
+                <td><input type="radio" id="radioX0" name="radioX" value="0" checked></td>
+                <td><input type="radio" id="radioX1" name="radioX" value="1"></td>
+                <td><input type="radio" id="radioX2" name="radioX" value="2"></td>
+                <td><input type="radio" id="radioX3" name="radioX" value="3"></td>
+                <td><input type="radio" id="radioX4" name="radioX" value="4"></td>
+                <td><input type="radio" id="radioX5" name="radioX" value="5"></td>
+                <td><input type="radio" id="radioX6" name="radioX" value="6"></td>
+                <td><input type="radio" id="radioX7" name="radioX" value="7"></td>
+                <td><input type="radio" id="radioX8" name="radioX" value="8"></td>
+                <td><input type="radio" id="radioX9" name="radioX" value="9"></td>
+            </tr>
+            <tr>
+                <td>Y</td>
+                <td><input type="radio" id="radioY0" name="radioY" value="0"></td>
+                <td><input type="radio" id="radioY1" name="radioY" value="1" checked></td>
+                <td><input type="radio" id="radioY2" name="radioY" value="2"></td>
+                <td><input type="radio" id="radioY3" name="radioY" value="3"></td>
+                <td><input type="radio" id="radioY4" name="radioY" value="4"></td>
+                <td><input type="radio" id="radioY5" name="radioY" value="5"></td>
+                <td><input type="radio" id="radioY6" name="radioY" value="6"></td>
+                <td><input type="radio" id="radioY7" name="radioY" value="7"></td>
+                <td><input type="radio" id="radioY8" name="radioY" value="8"></td>
+                <td><input type="radio" id="radioY9" name="radioY" value="9"></td>
+            </tr>
+        </table>
+        <button id="generateNthNormal">Сгенерировать</button><input type="number" value="1000" id="nOfVectors" style="width:80px;">
+        <br>
+        <table>
+            <tr>
+                <td>Вектор оценочных средних</td>
+                <td><div id="sampleMean">1</div></td>
+                <td>Ошибки</td>
+                <td><div id="sampleMeanDelta">3</div></td>
+            </tr>
+            <tr>
+                <td>Вектор оценочных дисперсий</td>
+                <td><div id="sampleVar">2</div></td>
+                <td>Ошибки</td>
+                <td><div id="sampleVarDelta">4</div></td>
+            </tr>
+        </table>
+        <div id="normalPlotContainer" style="height: 700px; width: 700px;"></div><br>
+
+        <br>
         Лабораторная работа  № 2<br>
         Тема: Случайные величины: законы распределения, числовые характеристики. Моделирование случайных величин с заданными законами распределения. Оценивание числовых характеристик и законов распределения по выборочным данным<br>
-        Выполнил студент группы Б8403А Щуров Алексей<br><br>
         Дискретная задача (вар. 3)
         <br>
         Случайная величина  X  может иметь любое целое положительное значение $n$ с вероятностью, пропорциональной $\left(\frac{2}{3}\right)^n$

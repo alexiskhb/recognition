@@ -1,7 +1,208 @@
 $(document).ready(function() {
+	function splitNumsByWhitespace(s) {
+		return s.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
+	}
+
+	$('#generateNthNormal').on('click', function(event) {
+		function getCovariationMatrix(vars) {
+			let size = vars.length;
+			function validate(mat) {
+				function minor(mat, n) {
+					if (n > mat.length) {
+						return mat;
+					}
+					let r = [];
+					for (let i = 0; i < n; i++) {
+						r.push([]);
+						for (let j = 0; j < n; j++) {
+							r[i].push(mat[i][j]);
+						}
+					}
+					return r;
+				}
+
+				if (!jStat(mat).symmetric()) {
+					alert('Матрица не симметричная');
+					return false;
+				}
+				for (let i = 2; i < mat.length; i++) {
+					let m = minor(mat, i);
+					if (jStat.det(m) <= 0) {
+						alert('Матрица не положительно определена');
+						return false;
+					}
+				}
+				return true;
+			}
+
+			let corr = splitNumsByWhitespace($('#covariationMatrix').val());
+			if (size*size != corr.length && size*(size + 1)/2 != corr.length) {
+				alert('Размеры вектора дисперсий и матрицы ковариации несовместимы');
+				return null;
+			}
+			let mat = [];
+			for (let i = 0; i < size; i++) {
+				mat.push([]);
+			}
+			if (size*size == corr.length) {
+				for (let i = 0; i < size; i++) {
+					for (let j = 0; j < size; j++) {
+						mat[i].push(corr[i*size + j]);
+					}
+				}
+			} else {
+				let k = 0;
+				for (let i = 0; i < size; i++) {
+					for (let j = 0; j < size; j++) {
+						mat[i].push(j <= i ? corr[k++] : 0);
+					}
+				}
+				for (let i = 0; i < size; i++) {
+					for (let j = i + 1; j < size; j++) {
+						mat[i][j] = mat[j][i];
+					}
+				}
+			}
+			for (let i = 0; i < size; i++) {
+				for (let j = 0; j < size; j++) {
+					mat[i][j] *= Math.sqrt(vars[i])*Math.sqrt(vars[j]);
+				}
+			}
+			if (!validate(mat)) {
+				return null;
+			}
+			return mat;
+		}
+
+		function cholesky(corr) {
+			let B = [];
+			for (let i = 0; i < corr.length; i++) {
+				B.push([]);
+				for (let j = 0; j < corr.length; j++) {
+					B[i].push(0);
+				}
+			}
+			for (let i = 0; i < corr.length; i++) {
+				for (let j = 0; j <= i; j++) {
+					let nom = corr[i][j];
+					for (let k = 0; k < j - 1; k++) {
+						nom -= B[i][k]*B[j][k];
+					}
+					let denom = corr[i][j];
+					for (let k = 0; k < j - 1; k++) {
+						denom -= B[j][k]*B[j][k];
+					}
+					B[i][j] = nom/Math.sqrt(denom);
+					if (isNaN(B[i][j])) {
+						continue;
+					}
+				}
+			}
+			return B;
+		}
+
+		function getSample(N, means, B) {
+			let X = [];
+			for (let i = 0; i < N; i++) {
+				X.push([jStat.normal.sample(0, 1)]);
+			}
+			let prod = jStat.transpose(jStat.multiply(B, X));
+			let r = jStat.add(prod, means);
+			return r;
+		}
+
+		function getSamples(nOfVectors, N, means, B) {
+			let samples = [];
+			for (let i = 0; i < nOfVectors; i++) {
+				samples.push(getSample(N, means, B))
+			}
+			return samples;
+		}
+
+		function f2D(x, y, sigmaX, sigmaY, meanX, meanY, corr) {
+			let expPow = -1/(1-Math.pow(corr, 2))/2*(Math.pow((x-meanX)/sigmaX, 2) - 2*corr*(x-meanX)*(y-meanY)/sigmaX/sigmaY + Math.pow((y-meanY)/sigmaY, 2));
+			return Math.pow(Math.E, expPow)/Math.PI/sigmaX/sigmaY/Math.sqrt(1-Math.pow(corr, 2))/2;
+		}
+
+		function getNormal2DHeatmap(x0, y0, d, sigmaX, sigmaY, meanX, meanY, corr) {
+			let delta = d/($('#normalPlotContainer').width()/2);
+			let xs = [], ys = [], zs = [];
+			for (let t = 0; t < d; t += delta) {
+				xs.push(x0 + t);
+				ys.push(y0 + t);
+			}
+			for (let x = x0; x < x0 + d; x += delta) {
+				zs.push([]);
+				for (let y = y0; y < y0 + d; y += delta) {
+					zs[zs.length - 1].push(f2D(x, y, sigmaX, sigmaY, meanX, meanY, corr));
+				}
+			}
+			return {
+				x: xs, 
+				y: ys, 
+				z: jStat.transpose(zs),
+				type: 'heatmap',
+				// colorscale: 'Greys'
+				colorscale: 'YIGnBu'
+			};
+		}
+
+		let means = splitNumsByWhitespace($('#meanVector').val());
+		if (!means) {
+			return null;
+		}
+		let vars = splitNumsByWhitespace($('#varVector').val());
+		if (!vars) {
+			return null;
+		}
+		if (vars.length != means.length) {
+			alert('Вектора дисперсий и средних несовместимы');
+			return null;
+		}
+		let corr = getCovariationMatrix(vars);
+		if (!corr) {
+			return null;
+		}
+		let B = cholesky(corr);
+		let B2 = jStat.cholesky(corr); 
+		let samples = getSamples(Number($('#nOfVectors').val()), means.length, means, B2);
+		let samplesTr = jStat.transpose(samples);
+		let sampleMeans = samplesTr.map(jStat.mean).map(function(k){return Number(k.toFixed(4))});
+		let sampleVars = samplesTr.map(jStat.variance).map(function(k){return Number(k.toFixed(4))});
+		let sampleMeansDelta = jStat.subtract(means, sampleMeans).map(function(k){return Number(k.toFixed(4))});
+		let sampleVarsDelta = jStat.subtract(vars, sampleVars).map(function(k){return Number(k.toFixed(4))});
+		/*.replace(/,/g, " ")*/
+		$('#sampleMean').html(JSON.stringify(sampleMeans));
+		$('#sampleVar').html(JSON.stringify(sampleVars));
+		$('#sampleMeanDelta').html(JSON.stringify(sampleVarsDelta));
+		$('#sampleVarDelta').html(JSON.stringify(sampleMeansDelta));
+		let radioX = Number($('input[name=radioX]:checked').val());
+		let radioY = Number($('input[name=radioY]:checked').val());
+		let minX = jStat.min(samplesTr[radioX]);
+		let maxX = jStat.max(samplesTr[radioX]);
+		let minY = jStat.min(samplesTr[radioY]);
+		let maxY = jStat.max(samplesTr[radioY]);
+		let d = Math.max(maxX - minX, maxY - minY);
+		let heatmap = getNormal2DHeatmap(means[radioX] - vars[radioX], means[radioY] - vars[radioY], 2*Math.max(vars[radioX], vars[radioY]), 
+		                                 Math.sqrt(vars[radioX]), Math.sqrt(vars[radioY]), 
+		                                 means[radioX], means[radioY], 
+		                                 corr[radioX][radioY]/Math.sqrt(vars[radioX])/Math.sqrt(vars[radioY]));
+		let data = [heatmap, {
+			x: samplesTr[radioX],
+			y: samplesTr[radioY],
+			mode: 'markers',
+			type: 'scatter',
+			marker: {size:5, color: 'orange'}
+		}];
+		let layout = {
+			xaxis: {range: [means[radioX] - vars[radioX], means[radioX] + Math.max(vars[radioX], vars[radioY])]},
+			yaxis: {range: [means[radioY] - vars[radioY], means[radioY] + Math.max(vars[radioX], vars[radioY])]}
+		};
+		Plotly.newPlot('normalPlotContainer', data, layout);
+	});
+
 	var seriesN = 50;
 	var precision = 5;
-	updateSample();
 
 	function distrSeries() {
 		let dataPoints = [];
@@ -10,6 +211,16 @@ $(document).ready(function() {
 		}
 		return dataPoints;
 	}
+
+	function init() {
+		updateSample();
+		recalculateDPos();
+		recalculateContPos(); 
+		redrawCont();
+		updateSample();
+		updateContSample();
+	}
+
 	var ds = distrSeries();
 
 	let chartDSPolygon = new CanvasJS.Chart("chartContainerDSPolygon",
@@ -32,7 +243,6 @@ $(document).ready(function() {
 		}
 	});
 	chartDSPolygon.render();
-
 
 	function getFunc(ds) {
 		let dataPoints = [{x:0, y:0}];
@@ -118,9 +328,11 @@ $(document).ready(function() {
 	function updateSample() {
 		let N = $('#N').val();
 		let sample = getSampleDataPoints(N);
+		
 		for (let i = 0 ; i < sample.length; i++) {
 			sample[i].y /= N;
 		}
+
 		let chart = new CanvasJS.Chart("chartContainer",
 		{
 			zoomEnabled: true,
@@ -142,6 +354,7 @@ $(document).ready(function() {
 			}
 		});
 		chart.render();
+	
 		let st = getStats(sample, N);
 		let variance = 6;
 		let mean = 3;
@@ -203,13 +416,19 @@ $(document).ready(function() {
 		result = Math.max(Math.min(result, 1), 0);
 		$('#d_pos').html(result.toFixed(6));
 	}
-	$('#A').on('change', function(event) { recalculateDPos(); });
-	$('#B').on('change', function(event) { recalculateDPos(); });
-	recalculateDPos();
+
+	$('#A').on('change', function(event) { 
+		recalculateDPos(); 
+	});
+
+	$('#B').on('change', function(event) { 
+		recalculateDPos(); 
+	});
 
 	function F(x, sigma) {
 		return 1 - Math.pow(Math.E, -x*x/2/sigma/sigma);
 	}
+
 	function p(x, sigma) {
 		return x*Math.pow(Math.E, -x*x/2/sigma/sigma)/sigma/sigma;
 	}
@@ -221,6 +440,7 @@ $(document).ready(function() {
 		let result = F(B, sigma) - F(A, sigma);
 		$('#cont_pos').html(result.toFixed(4));
 	}
+
 	function redrawCont() {
 		let sigma = Number($('#sigma').val());
 		let L = Math.sqrt(2*sigma*sigma*Math.log(1000/999))-1;
@@ -230,9 +450,11 @@ $(document).ready(function() {
 		let contMode = sigma;
 		let contMean = sigma*Math.sqrt(Math.PI/2);
 		let contMedian = Math.sqrt(2*sigma*sigma*Math.log(2));
+
 		for (let x = L; x <= R; x += delta) {
 			f.push({x:x, y:F(x, sigma)});
 		}
+
 		let chartF = new CanvasJS.Chart("chartContainerContF",
 		{
 			zoomEnabled: true,
@@ -261,9 +483,9 @@ $(document).ready(function() {
 			f2.push({x:x, y:p(x, sigma)});
 		}
 		
-		$('#contMode').html(contMode.toFixed(4));
-		$('#contMean').html(contMean.toFixed(4));
-		$('#contMedian').html(contMedian.toFixed(4));
+		$('#contMode').html(contMode.toFixed(precision));
+		$('#contMean').html(contMean.toFixed(precision));
+		$('#contMedian').html(contMedian.toFixed(precision));
 
 		let chartP = new CanvasJS.Chart("chartContainerContP",
 		{
@@ -311,21 +533,22 @@ $(document).ready(function() {
 		});
 		chartP.render();
 	}
+
 	$('#cA').on('change', function(event) { 
 		recalculateContPos(); 
 		redrawCont();
 	});
+
 	$('#cB').on('change', function(event) { 
 		recalculateContPos(); 
 		redrawCont();
 	});
+
 	$('#sigma').on('change', function(event) { 
 		recalculateContPos(); 
 		redrawCont();
 		updateContSample();
 	});
-	recalculateContPos(); 
-	redrawCont();
 
 	function randFx(sigma) {
 		return Math.sqrt(-2*sigma*sigma*Math.log(1 - Math.random()));
@@ -385,6 +608,7 @@ $(document).ready(function() {
 			}
 		});
 		chart.render();
+
 		let contMean = sigma*Math.sqrt(Math.PI/2);
 		let contVar = sigma*sigma*(2-Math.PI/2);
 		$('#contResultsTbl').empty();
@@ -401,6 +625,7 @@ $(document).ready(function() {
 		for (let i = 1; i < sample.length; i++) {
 			stF.push({x:sample[i].x, y: stF[i-1].y + sample[i].y});
 		}
+
 		let chartStF = new CanvasJS.Chart("chartContainerContStF",
 		{
 			zoomEnabled: true,
@@ -428,13 +653,14 @@ $(document).ready(function() {
 	$('#contRefresh').on('click', function(event) {
 		updateContSample();
 	});
+	
 	$('#contN').on('change', function(event) {
 		updateContSample();
 	});
+	
 	$('#contNBin').on('change', function(event) {
 		updateContSample();
 	});
 
-	updateSample();
-	updateContSample();
+	init();
 });
