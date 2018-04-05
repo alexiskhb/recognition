@@ -119,7 +119,6 @@ $(document).ready(function() {
 				while (p.length < q.length) {
 					p.push(0);
 				}
-				let len = p.length;
 				let x = screenLinspace(n);
 				let rds = [];
 				let y = [];
@@ -127,8 +126,8 @@ $(document).ready(function() {
 					let t = x[i];
 					let r = jStat.normal.sample(0, 1);
 					rds.push(r);
-					for (let j = 1; j <= len && i - j >= 0; j++) {
-						r += q[j - 1]*rds[i - j] - p[j - 1]*y[i - j].y;
+					for (let j = 1; j <= p.length && i - j >= 0; j++) {
+						r += q[j - 1]*rds[i - j] + p[j - 1]*y[i - j].y;
 					}
 					y.push({x:t, y:r});
 				};
