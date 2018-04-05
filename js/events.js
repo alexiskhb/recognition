@@ -1,12 +1,21 @@
 $(document).ready(function() {
 	var precision = 4;
 	var pfc = 96/2.54; // approx pixels per centimiter
+	var displayedSignals = [];
 
 	function splitNumsByWhitespace(s) {
 		return s.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
 	}
 
-	$('#drawSignal').on('click', function(event) {
+	$('#drawSignal').on('click', function() {
+		displaySignal(false);
+	});
+	
+	$('#addSignal').on('click', function() {
+		displaySignal(true);
+	});
+
+	function displaySignal(add) {
 		function screenLinspace(width) {
 			let sampleRate = Number($('#signalParam_sampleRate').val());
 			sampleRate /= pfc;
@@ -104,20 +113,24 @@ $(document).ready(function() {
 				return y;
 			},
 			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //12
+				while (q.length < p.length) {
+					q.push(0);
+				}
+				while (p.length < q.length) {
+					p.push(0);
+				}
+				let len = p.length;
 				let x = screenLinspace(n);
-				let rs = [];
+				let rds = [];
 				let y = [];
 				for (let i = 0; i < x.length; i++) {
 					let t = x[i];
 					let r = jStat.normal.sample(0, 1);
-					rs.push(r);
-					for (let j = 1; j <= q.length && i - j >= 0; j++) {
-						r += q[j - 1]*rs[i - j];
+					rds.push(r);
+					for (let j = 1; j <= len && i - j >= 0; j++) {
+						r += q[j - 1]*rds[i - j] - p[j - 1]*y[i - j].y;
 					}
-					for (let j = 1; j <= p.length && i - j >= 0; j++) {
-						r -= p[j - 1]*y[i - j].y;
-					}
-					y.push({x:t, y: r});
+					y.push({x:t, y:r});
 				};
 				return y;
 			}
@@ -142,20 +155,33 @@ $(document).ready(function() {
 		let selectId = Number($("select#signal").val());
 		let selectText = $('#signal>option:selected').text();
 		let points = signals[selectId](n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma);
+		let axisY = {};
+		if ($('#signalParam_yMin').val() != "" && !isNaN(Number($('#signalParam_yMin').val()))) {
+			axisY.minimum = Number($('#signalParam_yMin').val());
+		}
+		if ($('#signalParam_yMax').val() != "" && !isNaN(Number($('#signalParam_yMax').val()))) {
+			axisY.maximum = Number($('#signalParam_yMax').val());
+		}
+		let newData = {
+			color: "blue",
+			type: showLine ? "line" : "column",
+			dataPoints: points,
+			markerSize: 0
+		};
+		if (add) {
+			displayedSignals.push(newData);
+		} else {
+			displayedSignals = [newData];
+		}
 		(new CanvasJS.Chart("signalPlotContainer", {
 			zoomEnabled: true,
 			zoomType: "x",
 			title: {text: selectText},
-			data: [{
-				color: "blue",
-				type: showLine ? "line" : "column",
-				dataPoints: points
-			}],
-			axisX:{minimum: 0}
+			data: displayedSignals,
+			axisX:{minimum: 0},
+			axisY:axisY
 		})).render();
-	});
-
-
+	}
 
 
 	$('#generateNthNormal').on('click', function(event) {
@@ -379,6 +405,7 @@ $(document).ready(function() {
 	}
 
 	function init() {
+		displayedSignals = [];
 		updateSample();
 		recalculateDPos();
 		recalculateContPos(); 
