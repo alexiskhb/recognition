@@ -4,7 +4,7 @@ $(document).ready(function() {
 	var displayedSignals = [];
 
 	function splitNumsByWhitespace(s) {
-		return s.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
+		return s.split(/[,\s]+/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
 	}
 
 	$('#drawSignal').on('click', function() {
@@ -151,6 +151,7 @@ $(document).ready(function() {
 		let showLine = $('#showLine').is(":checked");
 		let p = splitNumsByWhitespace($('#signalParam_p').val());
 		let q = splitNumsByWhitespace($('#signalParam_q').val());
+		let color = $('#signalParam_color').val();
 
 		let selectId = Number($("select#signal").val());
 		let selectText = $('#signal>option:selected').text();
@@ -163,7 +164,7 @@ $(document).ready(function() {
 			axisY.maximum = Number($('#signalParam_yMax').val());
 		}
 		let newData = {
-			color: "blue",
+			color: color,
 			type: showLine ? "line" : "column",
 			dataPoints: points,
 			markerSize: 0
