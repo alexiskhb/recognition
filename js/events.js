@@ -1,6 +1,6 @@
 $(document).ready(function() {
 	var precision = 4;
-	var pfc = 96/2.54; // approx pixels for centimiter
+	var pfc = 96/2.54; // approx pixels per centimiter
 
 	function splitNumsByWhitespace(s) {
 		return s.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
@@ -8,9 +8,11 @@ $(document).ready(function() {
 
 	$('#drawSignal').on('click', function(event) {
 		function screenLinspace(width) {
-			let delta = 1/pfc;
+			let sampleRate = Number($('#signalParam_sampleRate').val());
+			sampleRate /= pfc;
+			let delta = 1/pfc/sampleRate;
 			let r = [];
-			for (let x = 0; x < width/pfc; x += delta) {
+			for (let x = 0; x < width/pfc && x >= 0 && delta != 0; x += delta) {
 				r.push(x);
 			}
 			return r;
