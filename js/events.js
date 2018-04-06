@@ -8,6 +8,11 @@ $(document).ready(function() {
 		return s.split(/[,\s]+/).filter( function(e) { return e.trim().length > 0; } ).map(Number);
 	}
 
+	function Log(X, a) {
+		return Math.log(X) / Math.log(a);
+	}
+
+
 	$('#drawSignal').on('click', function() {
 		displaySignal(false);
 	});
@@ -151,6 +156,7 @@ $(document).ready(function() {
 		let p = splitNumsByWhitespace($('#signalParam_p').val());
 		let q = splitNumsByWhitespace($('#signalParam_q').val());
 		let color = $('#signalParam_color').val();
+		let logMultiplier = function(x) {return $('#isLogarithmic').is(":checked") ? 20*Log(x, 10) : x};
 
 		let selectId = Number($("select#signal").val());
 		let selectText = $('#signal>option:selected').text();
@@ -181,29 +187,63 @@ $(document).ready(function() {
 			axisX:{minimum: 0},
 			axisY:axisY
 		})).render();
+
 		let ys = newData.dataPoints.map(function(p){return p.y});
-		let ysMean = jStat.mean(ys).toFixed(precision);
-		let ysVar = jStat.variance(ys).toFixed(precision);
-		let ysStd = jStat.stdev(ys).toFixed(precision);
-		let ysMax = jStat.max(ys).toFixed(precision);
-		let ysMin = jStat.min(ys).toFixed(precision);
-		let ysMedian = jStat.median(ys).toFixed(precision);
-		let ysCoeffvar = jStat.coeffvar(ys).toFixed(precision);
-		let ysKurtosis = jStat.kurtosis(ys).toFixed(precision); // эксцесс
-		let ysSkewness = jStat.skewness(ys).toFixed(precision); // асимметрия
-		$('#signalSampleStats').html(
-			'Среднее: ' + ysMean + '<br>' +
-			'Дисперсия: ' + ysVar + '<br>' +
-			'Ср. квадр.:' + ysStd + '<br>' +
-			'Максимум: ' + ysMax + '<br>' +
-			'Минимум: ' + ysMin + '<br>' +
-			'Медиана: ' + ysMedian + '<br>' +
-			'Коэф. вариации: ' + ysCoeffvar + '<br>' +
-			'Коэф. эксцесса: ' + ysKurtosis + '<br>' +
-			'Коэф. асимметрии: ' + ysSkewness + '<br>'
-			);
-		// let fourier = dft(ys);
-	}
+		let dft = DFT(ys);
+		let idft = IDFT(dft);
+		let ysIdft = idft.map(function(z){return z[0]});
+
+		let ysMean = jStat.mean(ys),         ysIdftMean = jStat.mean(ysIdft);
+		let ysVar = jStat.variance(ys),      ysIdftVar = jStat.variance(ysIdft);
+		let ysStd = jStat.stdev(ys),         ysIdftStd = jStat.stdev(ysIdft);
+		let ysMax = jStat.max(ys),           ysIdftMax = jStat.max(ysIdft);
+		let ysMin = jStat.min(ys),           ysIdftMin = jStat.min(ysIdft);
+		let ysMedian = jStat.median(ys),     ysIdftMedian = jStat.median(ysIdft);
+		let ysCoeffvar = jStat.coeffvar(ys), ysIdftCoeffvar = jStat.coeffvar(ysIdft);
+		let ysKurtosis = jStat.kurtosis(ys), ysIdftKurtosis = jStat.kurtosis(ysIdft);
+		let ysSkewness = jStat.skewness(ys), ysIdftSkewness = jStat.skewness(ysIdft);
+		$('#signalStats').html('')
+			.append('<tr><td>Среднее:<td>' +          ysMean.toFixed(5) +     '</td></tr>')// '</td><td>' + ysIdftMean.toFixed(5) +     '</td><td>' + (ysMean - ysIdftMean).toFixed(5) +         '</td></tr>')
+			.append('<tr><td>Дисперсия:<td>' +        ysVar.toFixed(5) +      '</td></tr>')// '</td><td>' + ysIdftVar.toFixed(5) +      '</td><td>' + (ysVar - ysIdftVar).toFixed(5) +           '</td></tr>')
+			.append('<tr><td>Ср. квадр.:<td>' +       ysStd.toFixed(5) +      '</td></tr>')// '</td><td>' + ysIdftStd.toFixed(5) +      '</td><td>' + (ysStd - ysIdftStd).toFixed(5) +           '</td></tr>')
+			.append('<tr><td>Максимум:<td>' +         ysMax.toFixed(5) +      '</td></tr>')// '</td><td>' + ysIdftMax.toFixed(5) +      '</td><td>' + (ysMax - ysIdftMax).toFixed(5) +           '</td></tr>')
+			.append('<tr><td>Минимум:<td>' +          ysMin.toFixed(5) +      '</td></tr>')// '</td><td>' + ysIdftMin.toFixed(5) +      '</td><td>' + (ysMin - ysIdftMin).toFixed(5) +           '</td></tr>')
+			.append('<tr><td>Медиана:<td>' +          ysMedian.toFixed(5) +   '</td></tr>')// '</td><td>' + ysIdftMedian.toFixed(5) +   '</td><td>' + (ysMedian - ysIdftMedian).toFixed(5) +     '</td></tr>')
+			.append('<tr><td>Коэф. эксцесса:<td>' +   ysKurtosis.toFixed(5) + '</td></tr>')// '</td><td>' + ysIdftKurtosis.toFixed(5) + '</td><td>' + (ysKurtosis - ysIdftKurtosis).toFixed(5) + '</td></tr>')
+			.append('<tr><td>Коэф. асимметрии:<td>' + ysSkewness.toFixed(5) + '</td></tr>')// '</td><td>' + ysIdftSkewness.toFixed(5) + '</td><td>' + (ysSkewness - ysIdftSkewness).toFixed(5) + '</td></tr>');
+			;
+
+		(new CanvasJS.Chart("signalDft0PlotContainer", {
+			zoomEnabled: true,
+			zoomType: "x",
+			title: {text: "ДПФ амплитудный спектр"},
+			data: [{
+				color: "blue", type: "column", markerSize: 0,
+				dataPoints: dft.map(function(z, i) {return {x:i, y: logMultiplier(cMagnitude(z))};})
+			}]
+		})).render();
+		(new CanvasJS.Chart("signalDft1PlotContainer", {
+			zoomEnabled: true,
+			zoomType: "x",
+			title: {text: "ДПФ фазовый спектр"},
+			data: [{
+				color: "orange", type: "column", markerSize: 0,
+				dataPoints: dft.map(function(z, i) {return {x:i, y:Math.atan2(-z[1], z[0])};})
+			}]
+		})).render();
+		(new CanvasJS.Chart("signalIdftPlotContainer", {
+			zoomEnabled: true,
+			zoomType: "x",
+			title: {text: "ОДПФ"},
+			data: [{
+				color: color, type: showLine ? "line" : "column", markerSize: 0,
+				dataPoints: idft.map(function(z, i) {return {x:i, y:z[0]};})
+			}],
+			axisX:{minimum: 0},
+			axisY:axisY
+		})).render();
+
+	}		
 
 
 	$('#generateNthNormal').on('click', function(event) {

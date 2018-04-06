@@ -50,6 +50,7 @@
                 <td>Линия    <input type="checkbox" id="showLine" checked></td>
                 <td>$q$      <input type="text" value="-1.12, 0.592" id="signalParam_q" style="width:200px;"></td>
                 <td>$y_{min}$<input type="text" value="" id="signalParam_yMin" style="width:60px;"></td>
+                <td>log|F(n)|<input type="checkbox" id="isLogarithmic"></td>
             </tr>
         </table>
         <button id="drawSignal">Отобразить</button>
@@ -69,8 +70,14 @@
         </select>
         <button id="addSignal"> Добавить</button><br>
         <div id="signalPlotContainer" style="height: 350px; width: 100%;"></div><br>
-        <div id="signalSampleStats"></div>
-        <div id="signalDftPlotContainer" style="height: 350px; width: 100%;"></div><br>
+        <table style="width: 100%;">
+            <tr>
+                <td><div id="signalDft0PlotContainer" style="height: 350px; width: 100%;"></div></td>
+                <td><div id="signalDft1PlotContainer" style="height: 350px; width: 100%;"></div></td>
+            </tr>
+        </table>
+        <div id="signalIdftPlotContainer" style="height: 350px; width: 100%;"></div><br>
+        <table id="signalStats"></table>
 
 
 
