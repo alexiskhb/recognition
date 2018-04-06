@@ -140,6 +140,59 @@ $(document).ready(function() {
 			}
 		];
 
+		function corrFunc(vector, mean) {
+			function K(m) {
+				if (m < 0) {
+					return K(-m);
+				}
+				let r = 0;
+				for (let n = 0; n < vector.length - m; n++) {
+					r += (vector[n] - mean)*(vector[n + m] - mean);
+				} 
+				return r / vector.length;
+			}
+			let r = [];
+			for (let i = -(vector.length - 1); i < vector.length; i++) {
+				r.push({x:i, y:K(i)});
+			}
+			return r;
+		}
+
+		function pFunc(K, N, L) {
+			function getSum(k) {
+				let r = [0, 0];
+				for (let nn = 0; nn < K.length; nn++) {
+					let n = K[nn].x;
+					r = cAdd(r, cMultiply([K[nn].y, 0], dftExponent(k*n, N)));
+				}
+				return r;
+			}
+			let r = [];
+			for (let k = 0; k < N/2; k++) {
+				r.push({x:k, y: logMultiplier(cMagnitude(getSum(k)))});
+			}
+			if (L > 0) {
+				let r2 = [];
+				for (let i = 0; i < r.length; i++) {
+					let val = r[i].y, k = 1;
+					for (let l = 1; l <= L; l++) {
+						if (i - l >= 0) {
+							val += r[i - l].y;
+							++k;
+						}
+						if (i + l < r.length) {
+							val += r[i + l].y;
+							++k;
+						}
+					}
+					val /= k;
+					r2.push({x:i, y:val});
+				}
+				return r2;
+			}
+			return r;	
+		}
+
 		let n = Number($('#signalParam_N').val());
 		let n0 = Number($('#signalParam_n0').val());
 		let a = Number($('#signalParam_a').val());
@@ -189,19 +242,16 @@ $(document).ready(function() {
 		})).render();
 
 		let ys = newData.dataPoints.map(function(p){return p.y});
-		let dft = DFT(ys);
-		let idft = IDFT(dft);
-		let ysIdft = idft.map(function(z){return z[0]});
 
-		let ysMean = jStat.mean(ys),         ysIdftMean = jStat.mean(ysIdft);
-		let ysVar = jStat.variance(ys),      ysIdftVar = jStat.variance(ysIdft);
-		let ysStd = jStat.stdev(ys),         ysIdftStd = jStat.stdev(ysIdft);
-		let ysMax = jStat.max(ys),           ysIdftMax = jStat.max(ysIdft);
-		let ysMin = jStat.min(ys),           ysIdftMin = jStat.min(ysIdft);
-		let ysMedian = jStat.median(ys),     ysIdftMedian = jStat.median(ysIdft);
-		let ysCoeffvar = jStat.coeffvar(ys), ysIdftCoeffvar = jStat.coeffvar(ysIdft);
-		let ysKurtosis = jStat.kurtosis(ys), ysIdftKurtosis = jStat.kurtosis(ysIdft);
-		let ysSkewness = jStat.skewness(ys), ysIdftSkewness = jStat.skewness(ysIdft);
+		let ysMean = jStat.mean(ys);
+		let ysVar = jStat.variance(ys);
+		let ysStd = jStat.stdev(ys);
+		let ysMax = jStat.max(ys);
+		let ysMin = jStat.min(ys);
+		let ysMedian = jStat.median(ys);
+		let ysCoeffvar = jStat.coeffvar(ys);
+		let ysKurtosis = jStat.kurtosis(ys);
+		let ysSkewness = jStat.skewness(ys);
 		$('#signalStats').html('')
 			.append('<tr><td>Среднее:<td>' +          ysMean.toFixed(5) +     '</td></tr>')// '</td><td>' + ysIdftMean.toFixed(5) +     '</td><td>' + (ysMean - ysIdftMean).toFixed(5) +         '</td></tr>')
 			.append('<tr><td>Дисперсия:<td>' +        ysVar.toFixed(5) +      '</td></tr>')// '</td><td>' + ysIdftVar.toFixed(5) +      '</td><td>' + (ysVar - ysIdftVar).toFixed(5) +           '</td></tr>')
@@ -213,36 +263,72 @@ $(document).ready(function() {
 			.append('<tr><td>Коэф. асимметрии:<td>' + ysSkewness.toFixed(5) + '</td></tr>')// '</td><td>' + ysIdftSkewness.toFixed(5) + '</td><td>' + (ysSkewness - ysIdftSkewness).toFixed(5) + '</td></tr>');
 			;
 
-		(new CanvasJS.Chart("signalDft0PlotContainer", {
-			zoomEnabled: true,
-			zoomType: "x",
-			title: {text: "ДПФ амплитудный спектр"},
-			data: [{
-				color: "blue", type: "column", markerSize: 0,
-				dataPoints: dft.map(function(z, i) {return {x:i, y: logMultiplier(cMagnitude(z))};})
-			}]
-		})).render();
-		(new CanvasJS.Chart("signalDft1PlotContainer", {
-			zoomEnabled: true,
-			zoomType: "x",
-			title: {text: "ДПФ фазовый спектр"},
-			data: [{
-				color: "orange", type: "column", markerSize: 0,
-				dataPoints: dft.map(function(z, i) {return {x:i, y:Math.atan2(-z[1], z[0])};})
-			}]
-		})).render();
-		(new CanvasJS.Chart("signalIdftPlotContainer", {
-			zoomEnabled: true,
-			zoomType: "x",
-			title: {text: "ОДПФ"},
-			data: [{
-				color: color, type: showLine ? "line" : "column", markerSize: 0,
-				dataPoints: idft.map(function(z, i) {return {x:i, y:z[0]};})
-			}],
-			axisX:{minimum: 0},
-			axisY:axisY
-		})).render();
+		if ($('#evalFourier').is(':checked')) {
+			let dft = DFT(ys);
+			let idft = IDFT(dft);
+			let ysIdft = idft.map(function(z){return z[0]});
+			let ysIdftMean = jStat.mean(ysIdft);
+			let ysIdftVar = jStat.variance(ysIdft);
+			let ysIdftStd = jStat.stdev(ysIdft);
+			let ysIdftMax = jStat.max(ysIdft);
+			let ysIdftMin = jStat.min(ysIdft);
+			let ysIdftMedian = jStat.median(ysIdft);
+			let ysIdftCoeffvar = jStat.coeffvar(ysIdft);
+			let ysIdftKurtosis = jStat.kurtosis(ysIdft);
+			let ysIdftSkewness = jStat.skewness(ysIdft);
 
+			(new CanvasJS.Chart("signalDft0PlotContainer", {
+				zoomEnabled: true,
+				zoomType: "x",
+				title: {text: "ДПФ амплитудный спектр"},
+				data: [{
+					color: "blue", type: "column", markerSize: 0,
+					dataPoints: dft.map(function(z, i) {return {x:i, y: logMultiplier(cMagnitude(z))};})
+				}]
+			})).render();
+			(new CanvasJS.Chart("signalDft1PlotContainer", {
+				zoomEnabled: true,
+				zoomType: "x",
+				title: {text: "ДПФ фазовый спектр"},
+				data: [{
+					color: "orange", type: "column", markerSize: 0,
+					dataPoints: dft.map(function(z, i) {return {x:i, y:Math.atan2(-z[1], z[0])};})
+				}]
+			})).render();
+			(new CanvasJS.Chart("signalIdftPlotContainer", {
+				zoomEnabled: true,
+				zoomType: "x",
+				title: {text: "ОДПФ"},
+				data: [{
+					color: color, type: showLine ? "line" : "column", markerSize: 0,
+					dataPoints: idft.map(function(z, i) {return {x:i, y:z[0]};})
+				}],
+				axisX:{minimum: 0},
+				axisY:axisY
+			})).render();
+		}
+		if ($('#extendedEstimates').is(':checked')) {
+			let ysCorrF = corrFunc(ys, ysMean);
+			let power = pFunc(ysCorrF, ys.length, L);
+			(new CanvasJS.Chart("signalCorrFuncPlotContainer", {
+				zoomEnabled: true,
+				zoomType: "x",
+				title: {text: "Корреляционная функция"},
+				data: [{
+						color: color, type: showLine ? "line" : "column", markerSize: 0,
+						dataPoints: ysCorrF
+					}]
+			})).render();
+			(new CanvasJS.Chart("signalPowerPlotContainer", {
+				zoomEnabled: true,
+				zoomType: "x",
+				title: {text: "Мощность"},
+				data: [{
+						color: color, type: showLine ? "line" : "column", markerSize: 0,
+						dataPoints: power
+					}]
+			})).render();
+		}
 	}		
 
 

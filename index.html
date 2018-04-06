@@ -14,6 +14,29 @@
             .canvasjs-chart-credit {
                 display: none;
             }
+            .chartField {
+                width: 100%;
+                height: 120px;
+            }
+            td div {
+                border: 0;
+                width: auto;
+                height: auto;
+                min-height: 20px;
+                min-width: 20px;
+            }
+            .resizableDiv {
+                resize: both;
+                overflow: auto;
+                width: 100%;
+                height: 300px;
+                display:block;
+            }
+            .resizabletd {
+                padding: 0;
+                margin: 0px;
+                overflow: auto;
+            }
         </style>
         <script type="text/x-mathjax-config">
             MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
@@ -28,7 +51,7 @@
         Лабораторная работа  № 4<br>
         I. Моделирование и графическое отображение типовых цифровых сигналов<br>
         $N$ <input type="number" step="0.0001" value="1000" id="signalParam_N" style="width:60px;"> 
-        Частота дискретизации <input type="number" step="0.0001" value="20" id="signalParam_sampleRate" style="width:60px;"> <br>
+        Частота дискретизации <input type="number" step="0.0001" value="100" id="signalParam_sampleRate" style="width:60px;"> <br>
         <table>
             <tr>
                 <td>$n_0$    <input type="number" step="0.0001" value="5" id="signalParam_n0" style="width:60px;"></td>
@@ -68,15 +91,17 @@
             <option value="10">Сигнал белого шума, распределенного по нормальному закону с заданными средним a и дисперсией sigma^2</option>
             <option value="11">Случайный сигнал авторегрессии-скользящего среднего порядка (p,q)</option>
         </select>
-        <button id="addSignal"> Добавить</button><br>
+        <button id="addSignal"> Добавить</button><input type="checkbox" id="evalFourier" checked>Фурье спектр <input type="checkbox" id="extendedEstimates" checked>Продвинутые оценки<br>
         <div id="signalPlotContainer" style="height: 350px; width: 100%;"></div><br>
         <table style="width: 100%;">
             <tr>
-                <td><div id="signalDft0PlotContainer" style="height: 350px; width: 100%;"></div></td>
-                <td><div id="signalDft1PlotContainer" style="height: 350px; width: 100%;"></div></td>
+                <td><div id="signalDft0PlotContainer" style="height: 300px; width: 100%;"></div></td>
+                <td><div id="signalDft1PlotContainer" style="height: 300px; width: 100%;"></div></td>
             </tr>
         </table>
         <div id="signalIdftPlotContainer" style="height: 350px; width: 100%;"></div><br>
+        <div id="signalCorrFuncPlotContainer" style="height: 350px; width: 100%;"></div><br>
+        <div id="signalPowerPlotContainer" style="height: 350px; width: 100%;"></div><br>
         <table id="signalStats"></table>
 
 
