@@ -1,6 +1,7 @@
 $(document).ready(function() {
-	var precision = 4;
-	var pfc = 96/2.54; // approx pixels per centimiter
+	const precision = 4;
+	const pfc = 96/2.54; // approx pixels per centimiter
+
 	var displayedSignals = [];
 
 	function splitNumsByWhitespace(s) {
@@ -16,18 +17,17 @@ $(document).ready(function() {
 	});
 
 	function displaySignal(add) {
-		function screenLinspace(width) {
-			let sampleRate = Number($('#signalParam_sampleRate').val());
-			sampleRate /= pfc;
+		function screenLinspace(n) {
+			let sampleRate = Number($('#signalParam_sampleRate').val())/pfc;
 			let delta = 1/pfc/sampleRate;
 			let r = [];
-			for (let x = 0; x < width/pfc && x >= 0 && delta != 0; x += delta) {
+			for (let x = 0, k = 0; k < n && (x >= 0 && delta != 0); x += delta, k++) {
 				r.push(x);
 			}
 			return r;
 		} 
 
-		let signals = [
+		let signalGenerators = [
 			function (n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma) { //1
 				let x = screenLinspace(n);
 				let y = x.map(function(t){return {x:t, y:0};});
@@ -154,7 +154,7 @@ $(document).ready(function() {
 
 		let selectId = Number($("select#signal").val());
 		let selectText = $('#signal>option:selected').text();
-		let points = signals[selectId](n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma);
+		let points = signalGenerators[selectId](n, n0, a, omega, phi, L, p, q, tau, u, m, A, B, sigma);
 		let axisY = {};
 		if ($('#signalParam_yMin').val() != "" && !isNaN(Number($('#signalParam_yMin').val()))) {
 			axisY.minimum = Number($('#signalParam_yMin').val());
@@ -181,6 +181,28 @@ $(document).ready(function() {
 			axisX:{minimum: 0},
 			axisY:axisY
 		})).render();
+		let ys = newData.dataPoints.map(function(p){return p.y});
+		let ysMean = jStat.mean(ys).toFixed(precision);
+		let ysVar = jStat.variance(ys).toFixed(precision);
+		let ysStd = jStat.stdev(ys).toFixed(precision);
+		let ysMax = jStat.max(ys).toFixed(precision);
+		let ysMin = jStat.min(ys).toFixed(precision);
+		let ysMedian = jStat.median(ys).toFixed(precision);
+		let ysCoeffvar = jStat.coeffvar(ys).toFixed(precision);
+		let ysKurtosis = jStat.kurtosis(ys).toFixed(precision); // эксцесс
+		let ysSkewness = jStat.skewness(ys).toFixed(precision); // асимметрия
+		$('#signalSampleStats').html(
+			'Среднее: ' + ysMean + '<br>' +
+			'Дисперсия: ' + ysVar + '<br>' +
+			'Ср. квадр.:' + ysStd + '<br>' +
+			'Максимум: ' + ysMax + '<br>' +
+			'Минимум: ' + ysMin + '<br>' +
+			'Медиана: ' + ysMedian + '<br>' +
+			'Коэф. вариации: ' + ysCoeffvar + '<br>' +
+			'Коэф. эксцесса: ' + ysKurtosis + '<br>' +
+			'Коэф. асимметрии: ' + ysSkewness + '<br>'
+			);
+		// let fourier = dft(ys);
 	}
 
 
